@@ -32,8 +32,9 @@ function ping(post) {
     } else {
         message = post.message;
     }
+
     // Quit here if slack integration is not activated
-    if (slackSettings.url && slackSettings.url !== '') {
+    if (slackSettings && slackSettings.url && slackSettings.url !== '') {
         // Only ping when not a page
         if (post.page) {
             return;
@@ -63,7 +64,7 @@ function ping(post) {
             common.logging.error(new common.errors.GhostError({
                 err: err,
                 context: common.i18n.t('errors.services.ping.requestFailed.error', {service: 'slack'}),
-                help: common.i18n.t('errors.services.ping.requestFailed.help', {url: 'http://docs.ghost.org'})
+                help: common.i18n.t('errors.services.ping.requestFailed.help', {url: 'https://docs.ghost.org/v1/'})
             }));
         });
     }
