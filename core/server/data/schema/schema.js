@@ -1,3 +1,12 @@
+/* String Column Sizes Information
+ * (From: https://github.com/TryGhost/Ghost/pull/7932)
+ *
+ * Small strings = length 50
+ * Medium strings = length 191
+ * Large strings = length 1000-2000
+ * Text = length 65535 (64 KiB)
+ * Long text = length 1,000,000,000
+ */
 module.exports = {
     posts: {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
@@ -296,6 +305,14 @@ module.exports = {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
         event: {type: 'string', maxlength: 50, nullable: false, validations: {isLowercase: true}},
         target_url: {type: 'string', maxlength: 2000, nullable: false},
+        name: {type: 'string', maxlength: 191, nullable: true},
+        secret: {type: 'string', maxlength: 191, nullable: true},
+        api_version: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'v2'},
+        integration_id: {type: 'string', maxlength: 24, nullable: true},
+        status: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'available'},
+        last_triggered_at: {type: 'dateTime', nullable: true},
+        last_triggered_status: {type: 'string', maxlength: 50, nullable: true},
+        last_triggered_error: {type: 'string', maxlength: 50, nullable: true},
         created_at: {type: 'dateTime', nullable: false},
         created_by: {type: 'string', maxlength: 24, nullable: false},
         updated_at: {type: 'dateTime', nullable: true},

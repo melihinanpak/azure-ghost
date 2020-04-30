@@ -1,14 +1,14 @@
 const _ = require('lodash'),
     Promise = require('bluebird'),
     debug = require('ghost-ignition').debug('services:routing:controllers:static'),
-    api = require('../../../api'),
     helpers = require('../helpers');
 
-function processQuery(query) {
+function processQuery(query, locals) {
+    const api = require('../../../api')[locals.apiVersion];
     query = _.cloneDeep(query);
 
     // Return a promise for the api query
-    return api[query.resource][query.type](query.options);
+    return (api[query.alias] || api[query.resource])[query.type](query.options);
 }
 
 module.exports = function staticController(req, res, next) {
@@ -17,7 +17,7 @@ module.exports = function staticController(req, res, next) {
     let props = {};
 
     _.each(res.routerOptions.data, function (query, name) {
-        props[name] = processQuery(query);
+        props[name] = processQuery(query, res.locals);
     });
 
     return Promise.props(props)
@@ -31,7 +31,7 @@ module.exports = function staticController(req, res, next) {
                     if (config.type === 'browse') {
                         response.data[name] = result[name];
                     } else {
-                        response.data[name] = result[name][config.resource];
+                        response.data[name] = result[name][config.alias] || result[name][config.resource];
                     }
                 });
             }

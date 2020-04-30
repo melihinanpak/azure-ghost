@@ -2,14 +2,14 @@ const _ = require('lodash'),
     Promise = require('bluebird'),
     url = require('url'),
     debug = require('ghost-ignition').debug('services:routing:helpers:post-lookup'),
-    routeMatch = require('path-match')(),
-    api = require('../../../api');
+    routeMatch = require('path-match')();
 
-function postLookup(postUrl, routerOptions) {
+function entryLookup(postUrl, routerOptions, locals) {
     debug(postUrl);
 
-    const targetPath = url.parse(postUrl).path,
-        permalinks = routerOptions.permalinks;
+    const api = require('../../../api')[locals.apiVersion];
+    const targetPath = url.parse(postUrl).path;
+    const permalinks = routerOptions.permalinks;
 
     let isEditURL = false;
 
@@ -31,24 +31,24 @@ function postLookup(postUrl, routerOptions) {
     }
 
     /**
-     * Query database to find post.
-     *
+     * Query database to find entry.
      * @deprecated: `author`, will be removed in Ghost 3.0
      */
-    return api.posts.read(_.extend(_.pick(params, 'slug', 'id'), {include: 'author,authors,tags'}))
+    return (api[routerOptions.query.alias] || api[routerOptions.query.resource])
+        .read(_.extend(_.pick(params, 'slug', 'id'), {include: 'author,authors,tags'}))
         .then(function then(result) {
-            const post = result.posts[0];
+            const entry = (result[routerOptions.query.alias] || result[routerOptions.query.resource])[0];
 
-            if (!post) {
+            if (!entry) {
                 return Promise.resolve();
             }
 
             return {
-                post: post,
+                entry: entry,
                 isEditURL: isEditURL,
                 isUnknownOption: isEditURL ? false : !!params.options
             };
         });
 }
 
-module.exports = postLookup;
+module.exports = entryLookup;

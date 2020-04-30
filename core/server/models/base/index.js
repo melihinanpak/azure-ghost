@@ -503,11 +503,15 @@ ghostBookshelf.Model = ghostBookshelf.Model.extend({
 
         switch (methodName) {
         case 'toJSON':
-            return baseOptions.concat('shallow', 'columns', 'absolute_urls');
+            return baseOptions.concat('shallow', 'columns');
         case 'destroy':
-            return baseOptions.concat(extraOptions, ['id', 'destroyBy']);
+            return baseOptions.concat(extraOptions, ['id', 'destroyBy', 'require']);
         case 'edit':
-            return baseOptions.concat(extraOptions, ['id']);
+            return baseOptions.concat(extraOptions, ['id', 'require']);
+        case 'findOne':
+            return baseOptions.concat(extraOptions, ['require']);
+        case 'findAll':
+            return baseOptions.concat(extraOptions, ['columns']);
         default:
             return baseOptions.concat(extraOptions);
         }
@@ -642,13 +646,14 @@ ghostBookshelf.Model = ghostBookshelf.Model.extend({
         var options = this.filterOptions(unfilteredOptions, 'findAll'),
             itemCollection = this.forge();
 
-        // transforms fictive keywords like 'all' (status:all) into correct allowed values
-        if (this.processOptions) {
-            this.processOptions(options);
+        // @TODO: we can't use order raw when running migrations (see https://github.com/tgriesser/knex/issues/2763)
+        if (this.orderDefaultRaw && !options.migrating) {
+            itemCollection.query((qb) => {
+                qb.orderByRaw(this.orderDefaultRaw(options));
+            });
         }
 
         itemCollection.applyDefaultAndCustomFilters(options);
-
         return itemCollection.fetchAll(options).then(function then(result) {
             if (options.withRelated) {
                 _.each(result.models, function each(item) {
@@ -692,11 +697,6 @@ ghostBookshelf.Model = ghostBookshelf.Model.extend({
         // Set this to true or pass ?debug=true as an API option to get output
         itemCollection.debug = options.debug && config.get('env') !== 'production';
 
-        // This applies default properties like 'staticPages' and 'status'
-        // And then converts them to 'where' options... this behaviour is effectively deprecated in favour
-        // of using filter - it's only be being kept here so that we can transition cleanly.
-        this.processOptions(options);
-
         // Add Filter behaviour
         itemCollection.applyDefaultAndCustomFilters(options);
 
@@ -710,8 +710,8 @@ ghostBookshelf.Model = ghostBookshelf.Model.extend({
         if (options.order) {
             options.order = this.parseOrderOption(options.order, options.withRelated);
         } else if (this.orderDefaultRaw) {
-            options.orderRaw = this.orderDefaultRaw();
-        } else {
+            options.orderRaw = this.orderDefaultRaw(options);
+        } else if (this.orderDefaultOptions) {
             options.order = this.orderDefaultOptions();
         }
 
